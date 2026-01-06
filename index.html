@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shakti Infra Solutions</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Import Map for React and Lucide Icons -->
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+        }
+    }
+    </script>
+    
+    <style>
+        /* Custom Fade In Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        /* Modal Animation */
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-modal-pop {
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Smooth Scroll Behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 antialiased selection:bg-teal-100 selection:text-teal-900">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+          Menu, 
+          X, 
+          MapPin, 
+          Phone, 
+          Mail, 
+          Facebook, 
+          Twitter, 
+          Instagram, 
+          Linkedin,
+          ArrowRight,
+          HardHat,
+          Ruler,
+          Leaf,
+          Users,
+          Building2,
+          CheckCircle,
+          Calendar,
+          Clock
+        } from 'lucide-react';
+
+        // --- Reusable Modal Component ---
+        const Modal = ({ isOpen, onClose, title, content, type, image }) => {
+            useEffect(() => {
+                if (isOpen) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = 'unset';
+                }
+                return () => { document.body.style.overflow = 'unset'; };
+            }, [isOpen]);
+
+            if (!isOpen) return null;
+
+            return (
+                <div 
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in" 
+                    onClick={onClose}
+                >
+                    <div 
+                        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col animate-modal-pop overflow-hidden" 
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header with Image (Optional) or Color Bar */}
+                        {image ? (
+                             <div className="h-48 w-full bg-cover bg-center shrink-0 relative" style={{ backgroundImage: `url(${image})` }}>
+                                <div className="absolute inset-0 bg-black/20"></div>
+                                <div className="w-full h-full absolute inset-0 flex items-end p-6 bg-gradient-to-t from-black/70 to-transparent">
+                                    <span className="bg-teal-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm z-10">{type}</span>
+                                </div>
+                             </div>
+                        ) : (
+                            <div className="bg-teal-600 h-2 w-full shrink-0"></div>
+                        )}
+
+                        <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar">
+                            <div className="flex justify-between items-start mb-4">
+                                {!image && <span className="text-teal-600 font-bold uppercase text-xs tracking-wider bg-teal-50 px-2 py-1 rounded">{type}</span>}
+                                <button 
+                                    onClick={onClose} 
+                                    className="ml-auto text-slate-400 hover:text-rose-500 hover:bg-rose-50 p-2 rounded-full transition-all duration-200"
+                                >
+                                    <X size={24}/>
+                                </button>
+                            </div>
+                            
+                            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-6 leading-tight">{title}</h2>
+                            
+                            <div className="prose prose-slate text-slate-600 leading-relaxed whitespace-pre-line text-lg">
+                                {content}
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end shrink-0">
+                            <button 
+                                onClick={onClose} 
+                                className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-6 py-2.5 rounded-lg font-bold transition-colors duration-200"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+          const [activePage, setActivePage] = useState('home');
+          const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+          const navigateTo = (page) => {
+            setActivePage(page);
+            setMobileMenuOpen(false);
+            window.scrollTo(0, 0);
+          };
+
+          const pages = {
+            home: <Home navigateTo={navigateTo} />,
+            about: <About />,
+            services: <Services />,
+            blog: <Blog />,
+            contact: <Contact />
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+              {/* Navigation */}
+              <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 transition-all duration-300">
+                <div className="container mx-auto px-6 py-4">
+                  <div className="flex justify-between items-center">
+                    {/* Logo */}
+                    <div 
+                      className="flex items-center cursor-pointer group" 
+                      onClick={() => navigateTo('home')}
+                    >
+                      <div className="bg-teal-600 text-white p-2 rounded-lg mr-3 group-hover:bg-teal-700 transition-colors duration-300 shadow-md">
+                        <Building2 size={24} />
+                      </div>
+                      <div>
+                        <h1 className="text-2xl font-bold text-slate-800 leading-none tracking-tight">SHAKTI</h1>
+                        <p className="text-[10px] text-teal-600 font-bold tracking-[0.2em] uppercase mt-0.5">Infra Solutions</p>
+                      </div>
+                    </div>
+
+                    {/* Desktop Menu */}
+                    <div className="hidden md:flex space-x-8 items-center">
+                      {['Home', 'About', 'Services', 'Blog', 'Contact'].map((item) => (
+                        <button
+                          key={item}
+                          onClick={() => navigateTo(item.toLowerCase())}
+                          className={`text-sm font-bold uppercase tracking-wide transition-all duration-200 relative group py-2 ${
+                            activePage === item.toLowerCase() 
+                              ? 'text-teal-600' 
+                              : 'text-slate-500 hover:text-teal-600'
+                          }`}
+                        >
+                          {item}
+                          <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-teal-600 transform origin-left transition-transform duration-300 ${activePage === item.toLowerCase() ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}></span>
+                        </button>
+                      ))}
+                      <button 
+                        onClick={() => navigateTo('contact')}
+                        className="bg-teal-600 hover:bg-teal-700 hover:-translate-y-0.5 active:translate-y-0 text-white px-6 py-2.5 rounded-full font-bold transition-all duration-200 shadow-lg shadow-teal-600/20"
+                      >
+                        Get a Quote
+                      </button>
+                    </div>
+
+                    {/* Mobile Menu Button */}
+                    <div className="md:hidden">
+                      <button 
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className="text-slate-600 focus:outline-none p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                      >
+                        {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Menu Dropdown */}
+                {mobileMenuOpen && (
+                  <div className="md:hidden bg-white border-t border-slate-100 absolute w-full shadow-xl animate-fade-in z-40">
+                    <div className="px-6 py-6 space-y-4">
+                      {['Home', 'About', 'Services', 'Blog', 'Contact'].map((item) => (
+                        <button
+                          key={item}
+                          onClick={() => navigateTo(item.toLowerCase())}
+                          className={`block w-full text-left py-3 px-4 rounded-lg font-bold text-lg transition-colors ${
+                            activePage === item.toLowerCase() ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </nav>
+
+              {/* Main Content Area */}
+              <main className="flex-grow">
+                {pages[activePage]}
+              </main>
+
+              {/* Footer */}
+              <footer className="bg-slate-900 text-slate-300 py-16">
+                <div className="container mx-auto px-6">
+                  <div className="grid md:grid-cols-4 gap-12 mb-12">
+                    <div className="col-span-1 md:col-span-1">
+                      <div className="flex items-center mb-6">
+                        <Building2 className="text-teal-500 mr-2" size={28} />
+                        <h2 className="text-3xl font-bold text-white tracking-tight">SHAKTI</h2>
+                      </div>
+                      <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                        Building India's future through sustainable infrastructure and female leadership. Precision, passion, and progress embedded in every brick.
+                      </p>
+                      <div className="flex space-x-4">
+                        {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
+                            <a key={i} href="#" className="bg-slate-800 p-2 rounded-lg hover:bg-teal-600 hover:text-white transition-all duration-300 group">
+                                <Icon size={20} className="group-hover:scale-110 transition-transform" />
+                            </a>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-white font-bold text-lg mb-6 relative inline-block">
+                        Quick Links
+                        <span className="absolute bottom-0 left-0 w-1/2 h-1 bg-teal-500 rounded-full"></span>
+                      </h3>
+                      <ul className="space-y-3 text-sm">
+                        <li><button onClick={() => navigateTo('home')} className="hover:text-teal-400 hover:translate-x-1 transition-all duration-200">Home</button></li>
+                        <li><button onClick={() => navigateTo('about')} className="hover:text-teal-400 hover:translate-x-1 transition-all duration-200">About Us</button></li>
+                        <li><button onClick={() => navigateTo('services')} className="hover:text-teal-400 hover:translate-x-1 transition-all duration-200">Services</button></li>
+                        <li><button onClick={() => navigateTo('blog')} className="hover:text-teal-400 hover:translate-x-1 transition-all duration-200">Projects & Blog</button></li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="text-white font-bold text-lg mb-6 relative inline-block">
+                        Services
+                        <span className="absolute bottom-0 left-0 w-1/2 h-1 bg-teal-500 rounded-full"></span>
+                      </h3>
+                      <ul className="space-y-3 text-sm text-slate-400">
+                        <li className="hover:text-white transition-colors cursor-default">Sustainable Architecture</li>
+                        <li className="hover:text-white transition-colors cursor-default">Commercial Interiors</li>
+                        <li className="hover:text-white transition-colors cursor-default">Urban Landscape Design</li>
+                        <li className="hover:text-white transition-colors cursor-default">Project Management</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="text-white font-bold text-lg mb-6 relative inline-block">
+                        Contact
+                        <span className="absolute bottom-0 left-0 w-1/2 h-1 bg-teal-500 rounded-full"></span>
+                      </h3>
+                      <ul className="space-y-4 text-sm">
+                        <li className="flex items-start group">
+                          <MapPin size={18} className="mr-3 text-teal-500 mt-0.5 group-hover:text-teal-400 transition-colors" />
+                          <span className="group-hover:text-white transition-colors">124, Tech Park Road, Whitefield,<br/>Bengaluru, Karnataka 560066</span>
+                        </li>
+                        <li className="flex items-center group">
+                          <Phone size={18} className="mr-3 text-teal-500 group-hover:text-teal-400 transition-colors" />
+                          <span className="group-hover:text-white transition-colors">+91 98765 43210</span>
+                        </li>
+                        <li className="flex items-center group">
+                          <Mail size={18} className="mr-3 text-teal-500 group-hover:text-teal-400 transition-colors" />
+                          <span className="group-hover:text-white transition-colors">hello@shaktiinfra.in</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="border-t border-slate-800 pt-8 text-center text-xs text-slate-500">
+                    &copy; 2026 Shakti Infra Solutions. All rights reserved. | Empowering Women in Construction Made with Love by Leena.
+                  </div>
+                </div>
+              </footer>
+            </div>
+          );
+        };
+
+        /* --- Page Components --- */
+
+        const Home = ({ navigateTo }) => (
+          <div className="animate-fade-in">
+            {/* Hero Section */}
+            <section className="relative bg-teal-900 text-white min-h-[90vh] flex items-center overflow-hidden">
+              <div className="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center transition-transform duration-[20s] hover:scale-105"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-teal-900 via-teal-900/80 to-transparent"></div>
+              
+              <div className="container mx-auto px-6 relative z-10 pt-20">
+                <div className="max-w-4xl">
+                  <div className="flex items-center space-x-2 mb-6 animate-fade-in" style={{animationDelay: '0.1s'}}>
+                    <span className="bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-[0_0_15px_rgba(20,184,166,0.5)]">Women-Led</span>
+                    <span className="bg-white/10 text-teal-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">Sustainable</span>
+                  </div>
+                  
+                  <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-8 animate-fade-in" style={{animationDelay: '0.2s'}}>
+                    Building India's Future,<br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-teal-200">Designed by Women.</span>
+                  </h1>
+                  
+                  <p className="text-xl text-teal-50 mb-10 leading-relaxed max-w-2xl animate-fade-in" style={{animationDelay: '0.3s'}}>
+                    We are a premier construction and design consultancy transforming urban landscapes. From sustainable skyscrapers to eco-friendly homes, we bring a fresh, inclusive perspective to infrastructure.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-5 animate-fade-in" style={{animationDelay: '0.4s'}}>
+                    <button 
+                      onClick={() => navigateTo('services')}
+                      className="bg-teal-500 hover:bg-teal-400 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-teal-500/40 hover:-translate-y-1 flex items-center justify-center group"
+                    >
+                      Explore Services <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    <button 
+                      onClick={() => navigateTo('contact')}
+                      className="bg-white/10 backdrop-blur-sm border-2 border-white/30 hover:bg-white hover:text-teal-900 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center hover:-translate-y-1 hover:shadow-lg"
+                    >
+                      Contact Us
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Features/Highlights */}
+            <section className="py-24 bg-white relative">
+              <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-slate-50 to-white"></div>
+              <div className="container mx-auto px-6 relative z-10">
+                <div className="text-center mb-20">
+                  <span className="text-teal-600 font-bold uppercase tracking-widest text-sm">Our Core Values</span>
+                  <h2 className="text-4xl font-bold text-slate-900 mt-2 mb-6">Why Choose Shakti Infra?</h2>
+                  <p className="text-slate-600 max-w-2xl mx-auto text-lg">We combine technical expertise with a commitment to social impact and environmental stewardship.</p>
+                </div>
+                
+                <div className="grid md:grid-cols-3 gap-10">
+                  {[
+                    { 
+                      icon: <HardHat size={36} className="text-teal-600" />, 
+                      title: "Expert Leadership", 
+                      desc: "Led by award-winning female architects and engineers with 15+ years of experience in metro and urban projects." 
+                    },
+                    { 
+                      icon: <Leaf size={36} className="text-teal-600" />, 
+                      title: "Eco-Conscious", 
+                      desc: "Every project is designed to minimize carbon footprint, utilizing recycled materials and maximizing energy efficiency." 
+                    },
+                    { 
+                      icon: <Ruler size={36} className="text-teal-600" />, 
+                      title: "Precision Design", 
+                      desc: "State-of-the-art 3D modeling (BIM) and structural analysis ensure flawless execution and zero material wastage." 
+                    }
+                  ].map((feature, idx) => (
+                    <div key={idx} className="p-10 border border-slate-100 rounded-3xl shadow-sm hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] transition-all duration-300 bg-slate-50 hover:bg-white hover:-translate-y-2 group">
+                      <div className="bg-white w-20 h-20 rounded-2xl flex items-center justify-center shadow-sm mb-8 group-hover:scale-110 group-hover:bg-teal-50 transition-all duration-300">
+                        {feature.icon}
+                      </div>
+                      <h3 className="text-2xl font-bold mb-4 text-slate-800 group-hover:text-teal-700 transition-colors">{feature.title}</h3>
+                      <p className="text-slate-600 leading-relaxed">{feature.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* CTA Banner */}
+            <section className="bg-slate-900 py-24 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-1/3 h-full bg-teal-900/20 skew-x-12 transform translate-x-20"></div>
+              <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between relative z-10">
+                <div className="mb-8 md:mb-0 max-w-2xl">
+                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to start your dream project?</h2>
+                  <p className="text-slate-400 text-lg">Get a free consultation and sustainability audit. Let's discuss how we can bring your vision to life.</p>
+                </div>
+                <button 
+                  onClick={() => navigateTo('contact')}
+                  className="bg-teal-500 hover:bg-teal-400 text-white px-10 py-4 rounded-xl font-bold transition-all duration-300 shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_30px_rgba(20,184,166,0.5)] hover:-translate-y-1"
+                >
+                  Let's Talk
+                </button>
+              </div>
+            </section>
+          </div>
+        );
+
+        const About = () => (
+          <div className="animate-fade-in">
+            <div className="bg-slate-100 py-20 relative overflow-hidden">
+               <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-teal-100 rounded-full opacity-50 blur-3xl"></div>
+               <div className="absolute -top-20 -left-20 w-96 h-96 bg-purple-100 rounded-full opacity-50 blur-3xl"></div>
+              <div className="container mx-auto px-6 text-center relative z-10">
+                <span className="text-teal-600 font-bold uppercase tracking-widest text-sm block mb-3">Who We Are</span>
+                <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">Building More Than Structures</h1>
+                <p className="text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed">Shakti Infra Solutions isn't just a construction company; it's a movement bridging the gender gap in India's infrastructure sector.</p>
+              </div>
+            </div>
+            
+            <div className="container mx-auto px-6 py-24">
+              <div className="grid md:grid-cols-2 gap-16 items-center">
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-teal-600 rounded-2xl transform translate-x-3 translate-y-3 group-hover:translate-x-5 group-hover:translate-y-5 transition-transform duration-300"></div>
+                  <img 
+                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2069&auto=format&fit=crop" 
+                    alt="Female Architect" 
+                    className="relative rounded-2xl shadow-2xl z-10 w-full h-[500px] object-cover object-center"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-800 mb-8">Our Mission</h2>
+                  <p className="text-slate-600 mb-6 leading-relaxed text-lg">
+                    Founded in 2020, Shakti Infra Solutions was born from a desire to redefine the construction landscape. We believe that women bring unique perspectives to design—focusing on inclusivity, safety, and community integration.
+                  </p>
+                  <p className="text-slate-600 mb-10 leading-relaxed text-lg">
+                    Our mission is to build robust, sustainable infrastructure while empowering women at every level of the construction hierarchy, from site engineers to architects.
+                  </p>
+                  
+                  <div className="space-y-6">
+                    <div className="flex items-start bg-slate-50 p-5 rounded-xl border border-slate-100 hover:border-teal-100 transition-colors">
+                      <div className="bg-teal-100 p-2 rounded-lg text-teal-600 mr-4 shrink-0">
+                        <CheckCircle size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-lg mb-1">Sustainability First</h4>
+                        <p className="text-slate-500">We prioritize local materials, rainwater harvesting, and green energy in every blueprint.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start bg-slate-50 p-5 rounded-xl border border-slate-100 hover:border-teal-100 transition-colors">
+                      <div className="bg-teal-100 p-2 rounded-lg text-teal-600 mr-4 shrink-0">
+                        <Users size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-lg mb-1">Women Empowerment</h4>
+                        <p className="text-slate-500">50% of our workforce and 80% of our leadership are women, creating a safer, more inclusive industry.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-32">
+                <div className="text-center mb-16">
+                     <h2 className="text-3xl font-bold text-slate-800">Meet Our Leaders</h2>
+                     <div className="w-24 h-1 bg-teal-500 mx-auto mt-4 rounded-full"></div>
+                </div>
+                
+                <div className="grid md:grid-cols-3 gap-10">
+                  {[
+                    { 
+                        name: "Ananya Rao", 
+                        role: "CEO & Founder", 
+                        desc: "Civil Engineer with 15 years in metro projects. Former Lead Engineer at DMRC.",
+                        img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=300&h=300"
+                    },
+                    { 
+                        name: "Meera Kapoor", 
+                        role: "Head of Design", 
+                        desc: "Award-winning sustainable architect known for her 'breathing buildings' concept.",
+                        img: "https://images.unsplash.com/photo-1598550874175-4d7112ee7f43?auto=format&fit=crop&q=80&w=300&h=300"
+                    },
+                    { 
+                        name: "Sarah John", 
+                        role: "Project Director", 
+                        desc: "Expert in lean construction methodologies and onsite safety management.",
+                        img: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=300&h=300"
+                    },
+                  ].map((member, idx) => (
+                    <div key={idx} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group">
+                      <div className="w-28 h-28 mx-auto mb-6 rounded-full overflow-hidden border-4 border-teal-50 group-hover:border-teal-200 transition-colors shadow-inner">
+                        <img src={member.img} alt={member.name} className="w-full h-full object-cover" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-800 mb-1">{member.name}</h3>
+                      <p className="text-teal-600 text-sm font-bold uppercase tracking-wide mb-4">{member.role}</p>
+                      <p className="text-slate-500 leading-relaxed">{member.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+        const Services = () => {
+            const [selectedService, setSelectedService] = useState(null);
+
+            const servicesData = [
+                {
+                    title: "Architectural Design",
+                    price: "Starts at ₹50/sq.ft",
+                    desc: "Full-scale architectural planning focusing on natural light, ventilation, and space utilization.",
+                    details: `Our Architectural Design service is the foundation of your dream project. We don't just draw plans; we craft environments.
+                    
+                    **What we offer:**
+                    • **Conceptual Design:** Initial sketches and mood boards to align with your vision.
+                    • **3D Modeling & Visualization:** High-fidelity renders using BIM (Building Information Modeling) so you can "walk through" your space before a brick is laid.
+                    • **Sustainable Zoning:** Optimizing building orientation for maximum natural light and airflow, reducing future electricity bills by up to 30%.
+                    • **Regulatory Approvals:** We handle all municipal sanction drawings and approvals, ensuring a hassle-free process.
+                    
+                    Whether it's a cozy eco-home or a corporate headquarters, our designs blend aesthetics with pure functionality.`,
+                    icon: <Ruler size={32} />,
+                    image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=1000"
+                },
+                {
+                    title: "Interior Consulting",
+                    price: "Custom Packages",
+                    desc: "Modern, minimalist, and traditional Indian interior designs using sustainable materials.",
+                    details: `Transform your interiors into a sanctuary of style and sustainability. Our approach combines modern ergonomics with the warmth of Indian craftsmanship.
+                    
+                    **Our Approach:**
+                    • **Material Sourcing:** We prioritize locally sourced materials like reclaimed teak, bamboo, and rattan to lower carbon footprints.
+                    • **Lighting Design:** Strategic lighting plans that mix ambient, task, and accent lighting to create the perfect mood.
+                    • **Custom Furniture:** Collaboration with local female artisans to create bespoke furniture pieces that tell a story.
+                    • **Healthy Spaces:** Use of low-VOC paints and non-toxic finishes to ensure indoor air quality is pristine.
+                    
+                    We curate spaces that look beautiful and feel healthy to live in.`,
+                    icon: <Building2 size={32} />,
+                    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=1000"
+                },
+                {
+                    title: "Green Building Audit",
+                    price: "₹15,000 / Project",
+                    desc: "Assessment of existing structures for energy efficiency and water conservation improvements.",
+                    details: `Is your building costing you too much to run? Our Green Building Audit identifies inefficiencies and provides actionable solutions.
+                    
+                    **The Audit Includes:**
+                    • **Energy Analysis:** Thermal imaging to detect heat leaks and insulation gaps.
+                    • **Water Management:** Assessing feasibility for rainwater harvesting and greywater recycling systems.
+                    • **Solar Potential:** Calculation of roof area and shadow analysis for solar panel installation.
+                    • **Waste Management:** Strategies for onsite composting and waste reduction.
+                    
+                    **Deliverable:** A comprehensive report with ROI calculations for every recommended upgrade. Most clients recover the audit fee within 3 months of implementing changes.`,
+                    icon: <Leaf size={32} />,
+                    image: "https://images.unsplash.com/photo-1518002171953-a080ee321e2f?auto=format&fit=crop&q=80&w=1000"
+                },
+                {
+                    title: "Project Management",
+                    price: "5% of Project Cost",
+                    desc: "End-to-end supervision ensuring timely delivery and budget adherence.",
+                    details: `Construction projects often suffer from delays and cost overruns. Our Project Management Consultancy (PMC) ensures your project stays on track.
+                    
+                    **Our Methodology:**
+                    • **Timeline Tracking:** Detailed Gantt charts and weekly progress reports sent directly to your inbox.
+                    • **Vendor Management:** We vet and coordinate with contractors, plumbers, and electricians so you don't have to.
+                    • **Quality Control:** Rigorous onsite checks for material quality (cement grades, steel tensile strength) and workmanship.
+                    • **Safety Protocols:** Strict adherence to safety norms, ensuring a zero-accident workspace.
+                    
+                    We act as your representative on-site, protecting your interests at every step.`,
+                    icon: <Users size={32} />,
+                    image: "https://images.unsplash.com/photo-1507208773393-40d9fc937155?auto=format&fit=crop&q=80&w=1000"
+                },
+                {
+                    title: "Renovation",
+                    price: "On Quotation",
+                    desc: "Transforming old spaces into modern, functional hubs without demolition.",
+                    details: `Don't demolish—revitalize. Our Renovation service breathes new life into aging structures while preserving their structural integrity.
+                    
+                    **Services:**
+                    • **Structural Strengthening:** Retrofitting columns and beams to increase load-bearing capacity.
+                    • **Space Reconfiguration:** Knocking down non-load-bearing walls to create open-plan layouts.
+                    • **Facade Facelifts:** Modernizing the exterior look with cladding, texture paints, or vertical gardens.
+                    • **Utility Upgrades:** Replacing old, dangerous wiring and leaking pipes with modern, efficient systems.
+                    
+                    We specialize in "livable renovations" where we work in phases to minimize disruption to your daily life.`,
+                    icon: <HardHat size={32} />,
+                    image: "https://images.unsplash.com/photo-1503387837-b98def812a2a?auto=format&fit=crop&q=80&w=1000"
+                },
+                {
+                    title: "Landscape Design",
+                    price: "Starts at ₹25/sq.ft",
+                    desc: "Integrating nature into urban spaces with vertical gardens and roof parks.",
+                    details: `Reconnect with nature even in the heart of the city. Our landscape designs are focused on biodiversity and low maintenance.
+                    
+                    **Key Features:**
+                    • **Native Plant Selection:** We choose plants native to your region that require 50% less water and are pest-resistant.
+                    • **Vertical Gardens:** perfect for tight urban spaces, turning blank walls into lush, green tapestries.
+                    • **Terrace Gardens:** Waterproofing and soil-less mediums to create rooftop retreats without adding structural weight.
+                    • **Irrigation Systems:** Automated drip irrigation systems that save water and time.
+                    
+                    A well-designed landscape reduces ambient temperature and provides a peaceful mental escape.`,
+                    icon: <MapPin size={32} />,
+                    image: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&q=80&w=1000"
+                }
+            ];
+
+            return (
+                <div className="animate-fade-in">
+                    <Modal 
+                        isOpen={!!selectedService} 
+                        onClose={() => setSelectedService(null)} 
+                        title={selectedService?.title}
+                        content={selectedService?.details}
+                        type="Service Detail"
+                        image={selectedService?.image}
+                    />
+
+                    <div className="bg-slate-100 py-20">
+                        <div className="container mx-auto px-6 text-center">
+                            <span className="text-teal-600 font-bold uppercase tracking-widest text-sm block mb-3">What We Do</span>
+                            <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">Our Services</h1>
+                            <p className="text-slate-600 max-w-2xl mx-auto text-lg">Comprehensive solutions from blueprint to reality, tailored for the modern Indian context.</p>
+                        </div>
+                    </div>
+
+                    <div className="container mx-auto px-6 py-24">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {servicesData.map((service, idx) => (
+                                <div key={idx} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-2xl transition-all duration-300 border border-slate-100 group flex flex-col h-full hover:-translate-y-2">
+                                    <div className="p-8 flex flex-col flex-grow">
+                                        <div className="w-14 h-14 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 mb-6 group-hover:bg-teal-600 group-hover:text-white transition-all duration-300 group-hover:scale-110 shadow-sm">
+                                            {service.icon}
+                                        </div>
+                                        <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-teal-700 transition-colors">{service.title}</h3>
+                                        <p className="text-teal-600 font-bold text-sm mb-4 bg-teal-50 inline-block px-2 py-1 rounded self-start">{service.price}</p>
+                                        <p className="text-slate-600 text-sm leading-relaxed mb-6 flex-grow">
+                                            {service.desc}
+                                        </p>
+                                        <button 
+                                            onClick={() => setSelectedService(service)}
+                                            className="text-teal-600 font-bold text-sm hover:text-teal-800 flex items-center mt-auto group/btn bg-slate-50 p-3 rounded-lg hover:bg-teal-50 transition-colors"
+                                        >
+                                            Learn More <ArrowRight size={16} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Blog = () => {
+            const [selectedPost, setSelectedPost] = useState(null);
+
+            const blogPosts = [
+                {
+                    title: "The Green Campus Initiative: A Success Story",
+                    date: "October 12, 2023",
+                    type: "Featured Case Study",
+                    image: "https://images.unsplash.com/photo-1766459842752-e06f749c0b54?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                    excerpt: "How Shakti Infra transformed a 5-acre barren land in Hyderabad into a self-sustaining educational campus using 40% recycled materials.",
+                    fullStory: `**Project: Vidyaranya Eco-Campus, Hyderabad**
+                    **Duration: 18 Months**
+                    **Status: Completed**
+
+                    In early 2022, Shakti Infra was approached by the Vidyaranya Trust with a daunting challenge: transform a 5-acre plot of rocky, barren land on the outskirts of Hyderabad into a lush, self-sustaining primary school campus. The catch? The budget was tight, and the client wanted a "Net Zero" energy rating.
+
+                    **The Challenge**
+                    The site had no groundwater source, and the soil was extremely eroded. Transporting conventional materials like bricks and cement would have blown the budget and the carbon footprint.
+
+                    **Our Solution**
+                    Led by our Project Director Sarah John, we decided to look inward—literally.
+                    
+                    1. **Earthbag Construction:** Instead of burnt bricks, we used 'Earthbags'—polypropylene bags filled with the onsite excavated soil. This technique, supervised by local women we trained on-site, saved ₹15 Lakhs in material costs and provided superior insulation against Hyderabad's heat.
+                    
+                    2. **The 'Stepwell' Auditorium:** Utilizing a natural depression in the land, we built an open-air amphitheater inspired by traditional Rajasthani stepwells. This serves as a rainwater catchment area during the monsoons, recharging the groundwater table.
+                    
+                    3. **Recycled Aggregates:** We sourced 40 tons of construction debris from a demolished mall nearby. After processing, this "waste" became the base for all internal roads and pathways.
+
+                    **Social Impact**
+                    The project employed 200 workers, 65% of whom were women from neighboring villages. We set up a crèche on-site for their children and provided skill training in masonry. Today, 20 of those women have formed their own construction cooperative.
+
+                    **The Result**
+                    The campus was inaugurated in October 2023. It runs entirely on 50kW solar panels, harvests 100% of its rainwater, and the internal temperature of the classrooms is naturally 4°C cooler than the outside temperature. It stands as a testament to what sustainable engineering can achieve when combined with local wisdom.`
+                },
+                {
+                    title: "5 Eco-Friendly Materials Revolutionizing Indian Homes",
+                    date: "September 28, 2023",
+                    type: "Insights",
+                    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000",
+                    excerpt: "From bamboo flooring to fly-ash bricks, here is how you can reduce your carbon footprint without compromising on style.",
+                    fullStory: `Building a home is often the biggest investment of a lifetime. But does it have to cost the Earth? Here are 5 materials we love using at Shakti Infra that are changing the game:
+
+                    **1. Fly Ash Bricks**
+                    Made from the waste generated by coal power plants, these bricks are lighter and stronger than traditional red clay bricks. By using them, you prevent topsoil erosion (caused by clay mining) and solve a waste disposal problem. Plus, they have excellent thermal insulation!
+
+                    **2. Bamboo**
+                    Often called "vegetable steel," bamboo has a tensile strength that rivals steel. We use treated bamboo for flooring, false ceilings, and even structural columns in our resort projects. It grows back in 3-5 years, making it infinitely renewable compared to timber.
+
+                    **3. Ferrocement**
+                    This involves using chicken mesh and a rich cement mortar to create thin, strong shells. We use it to create staircase railings, built-in furniture, and water tanks. It uses 40% less cement and steel than standard reinforced concrete.
+
+                    **4. Filler Slabs**
+                    Why fill your roof with heavy concrete when you don't need to? We place inverted clay pots or Mangalore tiles inside the concrete slab. This reduces the weight of the roof, saves expensive concrete, and creates air pockets that keep your home cooler.
+
+                    **5. Low-VOC Paints**
+                    The "new paint smell" is actually harmful chemicals (Volatile Organic Compounds) off-gassing. We exclusively recommend water-based, non-toxic paints that are safe for children and pets, ensuring your indoor air quality remains high.`
+                },
+                {
+                    title: "Women in Hard Hats: Breaking Stereotypes",
+                    date: "September 15, 2023",
+                    type: "Interview",
+                    image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=1000",
+                    excerpt: "Interviews with our site supervisors about the challenges and triumphs of working in construction.",
+                    fullStory: `The construction site is often seen as a "man's world." We sat down with **Lakshmi P.**, a Site Supervisor at Shakti Infra with 8 years of experience, to hear her story.
+
+                    **Q: How did you get into construction?**
+                    *Lakshmi:* "My father was a mason. I used to carry bricks for him. I loved seeing a drawing become a real house. When I studied Civil Engineering, I was the only girl in a class of 60 boys."
+
+                    **Q: What is the biggest challenge you face on-site?**
+                    *Lakshmi:* "Initially, getting older male laborers to listen to a young woman was hard. They would say, 'Madam, you sit in the office, we know how to pour concrete.' But when I spotted a leveling error that would have caused a wall to collapse, they started respecting me. Knowledge speaks louder than gender."
+
+                    **Q: What changes have you seen in the industry?**
+                    *Lakshmi:* "Safety is better now. At Shakti Infra, we have separate toilets for women laborers and strict policies against harassment. It makes a huge difference. More women are now joining as safety officers and surveyors, not just unskilled helpers."
+
+                    **Q: Advice for young women?**
+                    *Lakshmi:* "Don't be afraid of the dust. There is a different kind of pride in pointing at a skyscraper and saying, 'I helped build that.' The hard hat fits us just fine!"`
+                },
+                {
+                    title: "Smart Cities: The Role of Inclusive Design",
+                    date: "August 30, 2023",
+                    type: "Urban Planning",
+                    image: "https://images.unsplash.com/photo-1517021897933-0e0319cfbc28?auto=format&fit=crop&q=80&w=1000",
+                    excerpt: "Why designing for women and children makes cities safer and more accessible for everyone.",
+                    fullStory: `A smart city isn't just about WiFi hotspots and sensors; it's about people. Specifically, if you design a city that works for an 8-year-old and an 80-year-old, it works for everyone.
+
+                    At Shakti Infra, our urban planning division focuses on "Gender-Sensitive Design." What does that mean?
+
+                    **1. Lighting is Safety**
+                    Dark corners in parks and bus stops are deterrents for women. We advocate for and design pedestrian paths with consistent, warm-temperature LED lighting that eliminates shadows, making public spaces usable at night.
+
+                    **2. The 'Eyes on the Street' Concept**
+                    We design mixed-use buildings where shops and cafes are at ground level with transparent glass fronts. This ensures there are always people watching the street, which naturally reduces crime rates compared to high compound walls.
+
+                    **3. Accessible Pavements**
+                    In India, walking on a footpath is an extreme sport. We design continuous, flat pavements with ramps. This helps a mother with a stroller, a person in a wheelchair, or a traveler with a suitcase equally.
+
+                    **4. Public Toilets**
+                    The lack of clean public toilets restricts women's mobility. Our designs for municipal projects always include modular, self-cleaning toilet blocks that are well-lit and placed in high-visibility areas, not hidden away.
+
+                    Inclusive design doesn't cost more; it just requires empathy and thought.`
+                }
+            ];
+
+            return (
+                <div className="animate-fade-in">
+                    <Modal 
+                        isOpen={!!selectedPost} 
+                        onClose={() => setSelectedPost(null)} 
+                        title={selectedPost?.title}
+                        content={selectedPost?.fullStory}
+                        image={selectedPost?.image}
+                        type={selectedPost?.type}
+                    />
+
+                    <div className="bg-slate-100 py-20">
+                        <div className="container mx-auto px-6 text-center">
+                            <span className="text-teal-600 font-bold uppercase tracking-widest text-sm block mb-3">Our Journal</span>
+                            <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">Stories of Impact</h1>
+                            <p className="text-slate-600 max-w-2xl mx-auto text-lg">Insights on sustainability, technology, and the people building our future.</p>
+                        </div>
+                    </div>
+
+                    <div className="container mx-auto px-6 py-24">
+                        <div className="grid md:grid-cols-2 gap-12">
+                            {/* Featured Post */}
+                            <div className="md:col-span-2 bg-white rounded-3xl shadow-lg overflow-hidden flex flex-col md:flex-row group hover:shadow-2xl transition-all duration-300 border border-slate-100">
+                                <div className="md:w-1/2 bg-slate-200 min-h-[350px] overflow-hidden relative">
+                                    <div className="absolute inset-0 bg-teal-900/10 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                                    <img 
+                                        src={blogPosts[0].image} 
+                                        className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700"
+                                        alt="Green Campus"
+                                    />
+                                </div>
+                                <div className="p-10 md:p-14 flex flex-col justify-center md:w-1/2">
+                                    <div className="flex items-center space-x-3 mb-4">
+                                        <span className="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{blogPosts[0].type}</span>
+                                        <span className="text-slate-400 text-sm font-medium flex items-center"><Calendar size={14} className="mr-1"/> {blogPosts[0].date}</span>
+                                    </div>
+                                    <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-6 group-hover:text-teal-700 transition-colors leading-tight cursor-pointer" onClick={() => setSelectedPost(blogPosts[0])}>
+                                        {blogPosts[0].title}
+                                    </h2>
+                                    <p className="text-slate-600 mb-8 text-lg leading-relaxed">
+                                        {blogPosts[0].excerpt}
+                                    </p>
+                                    <button 
+                                        onClick={() => setSelectedPost(blogPosts[0])}
+                                        className="text-white bg-teal-600 hover:bg-teal-700 px-8 py-3 rounded-lg font-bold self-start transition-all duration-300 shadow-md hover:shadow-lg flex items-center"
+                                    >
+                                        Read Full Story <ArrowRight size={18} className="ml-2" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Regular Posts */}
+                            {blogPosts.slice(1).map((post, idx) => (
+                                <div key={idx} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group">
+                                    <div className="w-full h-48 mb-6 rounded-2xl overflow-hidden relative">
+                                        <img src={post.image} alt={post.title} className="w-full h-full object-cover object-center transform group-hover:scale-110 transition-transform duration-700" />
+                                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                                    </div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <span className="text-teal-600 font-bold text-xs uppercase tracking-wider">{post.type}</span>
+                                        <span className="text-slate-400 text-xs flex items-center"><Clock size={12} className="mr-1"/> {post.date}</span>
+                                    </div>
+                                    <h3 
+                                        className="text-2xl font-bold text-slate-800 mb-4 group-hover:text-teal-600 transition-colors cursor-pointer"
+                                        onClick={() => setSelectedPost(post)}
+                                    >
+                                        {post.title}
+                                    </h3>
+                                    <p className="text-slate-600 text-sm mb-6 leading-relaxed flex-grow">{post.excerpt}</p>
+                                    <button 
+                                        onClick={() => setSelectedPost(post)}
+                                        className="text-slate-800 font-bold text-sm hover:text-teal-600 flex items-center mt-auto transition-colors"
+                                    >
+                                        Read More <ArrowRight size={16} className="ml-1 transition-transform group-hover:translate-x-1" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Contact = () => (
+          <div className="animate-fade-in">
+            <div className="container mx-auto px-6 py-24">
+              <div className="grid md:grid-cols-2 gap-16 lg:gap-24">
+                <div>
+                  <span className="text-teal-600 font-bold uppercase tracking-widest text-sm">Get in Touch</span>
+                  <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mt-3 mb-8">Let's Build Something Beautiful Together</h1>
+                  <p className="text-slate-600 mb-10 text-lg leading-relaxed">
+                    Have a project in mind? Whether it's a home renovation, a corporate complex, or a sustainability audit, our team is ready to help you bring your vision to life.
+                  </p>
+
+                  <div className="space-y-8">
+                    <div className="flex items-start group">
+                      <div className="bg-teal-50 p-4 rounded-xl text-teal-600 mr-5 group-hover:bg-teal-600 group-hover:text-white transition-colors duration-300 shadow-sm">
+                        <MapPin size={28} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-lg">Our Office</h3>
+                        <p className="text-slate-600 leading-relaxed mt-1">124, Tech Park Road, Whitefield,<br/>Bengaluru, Karnataka 560066</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start group">
+                      <div className="bg-teal-50 p-4 rounded-xl text-teal-600 mr-5 group-hover:bg-teal-600 group-hover:text-white transition-colors duration-300 shadow-sm">
+                        <Mail size={28} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-lg">Email Us</h3>
+                        <p className="text-slate-600 mt-1">hello@shaktiinfra.in</p>
+                        <p className="text-slate-600">careers@shaktiinfra.in</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start group">
+                      <div className="bg-teal-50 p-4 rounded-xl text-teal-600 mr-5 group-hover:bg-teal-600 group-hover:text-white transition-colors duration-300 shadow-sm">
+                        <Phone size={28} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-lg">Call Us</h3>
+                        <p className="text-slate-600 mt-1 text-lg font-medium">+91 98765 43210</p>
+                        <p className="text-slate-500 text-sm mt-1">Mon-Fri, 9am - 6pm</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-10 rounded-3xl shadow-xl border border-slate-100 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-10 -mt-10 z-0"></div>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-8 relative z-10">Send a Message</h3>
+                  <form className="space-y-6 relative z-10" onSubmit={(e) => { e.preventDefault(); alert("Thank you! We will get back to you soon."); }}>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">First Name</label>
+                        <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all placeholder-slate-400" placeholder="Jane" required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Last Name</label>
+                        <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all placeholder-slate-400" placeholder="Doe" required />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
+                      <input type="email" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all placeholder-slate-400" placeholder="jane@example.com" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Project Type</label>
+                      <div className="relative">
+                        <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer">
+                            <option>Residential Construction</option>
+                            <option>Interior Design</option>
+                            <option>Commercial Project</option>
+                            <option>Green Audit Consultation</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Message</label>
+                      <textarea rows="4" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all placeholder-slate-400" placeholder="Tell us a bit about your project goals and timeline..." required></textarea>
+                    </div>
+                    <button className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-teal-500/25 hover:-translate-y-1">
+                      Send Message
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
